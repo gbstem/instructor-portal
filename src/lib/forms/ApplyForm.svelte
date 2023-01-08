@@ -4,16 +4,18 @@
   import { db, user, storage } from '$lib/firebase'
   import Input from '$lib/components/Input.svelte'
   import Select from '$lib/components/Select.svelte'
-  import Textarea from '$lib/components/Textarea.svelte'
   import {
     racesEthnicitiesJson,
     gendersJson,
-    schoolsJson,
-    worldJson,
-    shirtSizeJson,
-    dietaryRestrictionsJson,
     reasonsJson,
-    statesJson
+    frlpJson,
+    parentEducationJson,
+    timeSlotsJson,
+    csCoursesJson,
+    mathCoursesJson,
+    engineeringCoursesJson,
+    scienceCoursesJson,
+    gradesJson
   } from '$lib/data'
   import { createFields, serialize, isValid } from '$lib/forms'
   import { alert } from '$lib/stores'
@@ -26,34 +28,40 @@
   let showValidation = false
   let fields = {
     personal: createFields.text(
-      'email',
-      'firstName',
-      'lastName',
+      'primaryEmail',
+      'secondaryEmail',
+      'studentFirstName',
+      'studentLastName',
+      'parentFirstName',
+      'parentLastName',
+      'phoneNumber',
       'dateOfBirth',
       'gender',
       'raceEthnicity',
-      'phoneNumber',
-      'address',
-      'city',
-      'state',
-      'country',
-      'zipCode'
+      'frlp',
+      'parentEducation',
+      'address'
     ),
-    academic: createFields.text('currentSchool', 'graduationYear', 'major'),
-    hackathon: {
-      ...createFields.text('shirtSize', 'reason', 'why', 'role', 'proud'),
-      ...createFields.checkbox('firstHackathon', 'previouslyParticipated'),
-      ...createFields.file('resume'),
-      ...createFields.group('dietaryRestrictions')
+    academic: createFields.text('school', 'grade'),
+    program: {
+      ...createFields.text(
+        'reason',
+        'csCourse',
+        'mathCourse',
+        'engineeringCourse',
+        'scienceCourse'
+      ),
+      ...createFields.group('timeSlots'),
+      ...createFields.checkbox('inPerson')
     },
-    agreements: createFields.checkbox('codeOfConduct', 'sharing', 'mlhEmails', 'submitting'),
+    agreements: createFields.checkbox('entireProgram', 'timeCommitment', 'submitting'),
     meta: {
-      ...createFields.text('hhid'),
+      ...createFields.text('id'),
       ...createFields.text('uid'),
       ...createFields.checkbox('submitted')
-    },
-    status: createFields.checkbox('accepted', 'rejected', 'waitlisted')
+    }
   }
+
   onMount(async () => {
     const applicationDoc = await getDoc(doc($db, 'applications', $user.uid))
     if (applicationDoc.exists()) {
@@ -64,19 +72,19 @@
     const profileDoc = await getDoc(doc($db, 'users', $user.uid))
     const profileDocData = profileDoc.data()
     const temp = {
-      email: fields.personal.email.value,
-      firstName: fields.personal.firstName.value,
-      lastName: fields.personal.lastName.value
+      email: fields.personal.primaryEmail.value,
+      firstName: fields.personal.parentFirstName.value,
+      lastName: fields.personal.parentLastName.value
     }
-    fields.personal.email.value = $user.email
-    fields.personal.firstName.value = profileDocData.firstName
-    fields.personal.lastName.value = profileDocData.lastName
-    fields.meta.hhid.value = profileDocData.hhid
+    fields.personal.primaryEmail.value = $user.email
+    fields.personal.parentFirstName.value = profileDocData.firstName
+    fields.personal.parentLastName.value = profileDocData.lastName
+    fields.meta.id.value = profileDocData.id
     fields.meta.uid.value = $user.uid
     if (
-      temp.email !== fields.personal.email.value ||
-      temp.firstName !== fields.personal.firstName.value ||
-      temp.lastName !== fields.personal.lastName.value
+      temp.email !== fields.personal.primaryEmail.value ||
+      temp.firstName !== fields.personal.parentFirstName.value ||
+      temp.lastName !== fields.personal.parentLastName.value
     ) {
       handleSave(false)
     }
@@ -109,33 +117,23 @@
     showValidation = true
     if (isValid(formEl)) {
       disabled = true
-      storage
-        .uploadFile(fields.hackathon.resume.value, `resumes/${$user.uid}.pdf`)
-        .then(downloadURL => {
-          let serializedFields = serialize.toServer(fields)
-          serializedFields.hackathon.resume.upload.url = downloadURL
-          serializedFields.hackathon.resume.upload.name = fields.hackathon.resume.value.name
-          serializedFields.meta.submitted.checked = true
-          setDoc(doc($db, 'applications', $user.uid), serializedFields)
-            .then(async () => {
-              showValidation = false
-              alert.trigger('success', 'Your application has been submitted!')
-              const applicationDoc = await getDoc(doc($db, 'applications', $user.uid))
-              fields = serialize.fromServer(applicationDoc.data())
-              window.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-              })
-              handleEmail()
-            })
-            .catch(err => {
-              disabled = false
-              alert.trigger('error', err.code)
-            })
+      let serializedFields = serialize.toServer(fields)
+      serializedFields.meta.submitted.checked = true
+      setDoc(doc($db, 'applications', $user.uid), serializedFields)
+        .then(async () => {
+          showValidation = false
+          alert.trigger('success', 'Your application has been submitted!')
+          const applicationDoc = await getDoc(doc($db, 'applications', $user.uid))
+          fields = serialize.fromServer(applicationDoc.data())
+          window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          })
+          handleEmail()
         })
-        .catch(() => {
+        .catch(err => {
           disabled = false
-          alert.trigger('error', 'Error uploading resume. Please try again.', false)
+          alert.trigger('error', err.code)
         })
     } else {
       alert.trigger('error', 'Please fill all required fields correctly.', false)
@@ -163,48 +161,62 @@
       <span class="font-bold">Personal</span>
       <Card class="grid gap-3 my-2">
         <div class="bg-gray-100 shadow-sm rounded-md px-3 py-2">
-          {`Name: ${fields.personal.firstName.value} ${fields.personal.lastName.value}`}
+          {`Parent Name: ${fields.personal.parentFirstName.value} ${fields.personal.parentLastName.value}`}
         </div>
         <div class="bg-gray-100 shadow-sm rounded-md px-3 py-2">
-          {`Email: ${fields.personal.email.value}`}
+          {`Email: ${fields.personal.primaryEmail.value}`}
         </div>
         <div class="text-sm">
           Wrong name or email? Go to your <a class="link" href="/profile">profile</a> to update your
           information.
         </div>
       </Card>
-      {#if fields.hackathon.resume.upload.url !== ''}
-        <a class="mb-2" href={fields.hackathon.resume.upload.url} target="_blank" rel="noreferrer">
-          <Card class="flex items-center gap-3">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="1.5"
-              stroke="currentColor"
-              class="w-6 h-6"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
-              />
-            </svg>
-            <span>{`${fields.hackathon.resume.upload.name} (resume)`}</span>
-          </Card>
-        </a>
-      {/if}
+
+      <!-- secondary email -->
       <Input
-        type="date"
-        bind:field={fields.personal.dateOfBirth}
-        placeholder="Date of birth"
+        type="email"
+        bind:field={fields.personal.secondaryEmail}
+        placeholder="Secondary email"
+        floating
+      />
+      <Input
+        type="tel"
+        bind:field={fields.personal.phoneNumber}
+        placeholder="Phone number"
         floating
         required
       />
+
+      <!-- student first name -->
+      <Input
+        type="text"
+        bind:field={fields.personal.studentFirstName}
+        placeholder="Student first name"
+        floating
+        required
+      />
+
+      <!-- student last name -->
+      <Input
+        type="text"
+        bind:field={fields.personal.studentLastName}
+        placeholder="Student last name"
+        floating
+        required
+      />
+
+      <Input
+        type="date"
+        bind:field={fields.personal.dateOfBirth}
+        placeholder="Student Date of birth"
+        floating
+        required
+      />
+
       <div class="grid sm:grid-cols-2 gap-1 sm:gap-3">
         <Select
           bind:field={fields.personal.gender}
-          placeholder="Gender"
+          placeholder="Student gender"
           sourceJson={gendersJson}
           floating
           required
@@ -213,19 +225,28 @@
           bind:field={fields.personal.raceEthnicity}
           name="race"
           autocomplete="race"
-          placeholder="Race or ethnicity"
+          placeholder="Student race or ethnicity"
           sourceJson={racesEthnicitiesJson}
           floating
           required
         />
       </div>
-      <Input
-        type="tel"
-        bind:field={fields.personal.phoneNumber}
-        placeholder="Phone number"
+
+      <Select
+        bind:field={fields.personal.frlp}
+        placeholder="Eligible for federal free or reduced lunch program?"
+        sourceJson={frlpJson}
         floating
         required
       />
+      <Select
+        bind:field={fields.personal.parentEducation}
+        placeholder="Parent's highest level of education"
+        sourceJson={parentEducationJson}
+        floating
+        required
+      />
+
       <Input
         type="text"
         bind:field={fields.personal.address}
@@ -233,155 +254,110 @@
         floating
         required
       />
-      <div class="grid sm:grid-cols-2 gap-1 sm:gap-3">
-        <Input type="text" bind:field={fields.personal.city} placeholder="City" floating required />
-        <Select
-          bind:field={fields.personal.state}
-          placeholder="State"
-          sourceJson={statesJson}
-          floating
-        />
-      </div>
-      <div class="grid sm:grid-cols-2 gap-1 sm:gap-3">
-        <Select
-          bind:field={fields.personal.country}
-          placeholder="Country"
-          sourceJson={worldJson}
-          floating
-          required
-        />
-        <Input
-          type="text"
-          bind:field={fields.personal.zipCode}
-          placeholder="Zip code"
-          floating
-          required
-        />
-      </div>
     </div>
     <div class="grid gap-1">
       <span class="font-bold">Academic</span>
       <div class="grid sm:grid-cols-3 gap-1 sm:gap-3">
         <div class="sm:col-span-2">
-          <Select
-            bind:field={fields.academic.currentSchool}
-            placeholder="Current school"
-            sourceJson={schoolsJson}
+          <Input
+            type="text"
+            bind:field={fields.academic.school}
+            placeholder="Student's current school"
             floating
             required
           />
         </div>
-        <Input
-          type="number"
-          bind:field={fields.academic.graduationYear}
-          placeholder="Graduation year"
-          min={new Date().getFullYear()}
-          max={new Date().getFullYear() + 20}
+        <Select
+          bind:field={fields.academic.grade}
+          placeholder="Student Grade"
+          sourceJson={gradesJson}
           floating
           required
         />
       </div>
-      <Input type="text" bind:field={fields.academic.major} placeholder="Major" floating required />
     </div>
     <div class="grid gap-1">
-      <span class="font-bold">Hackathon</span>
-      <div class="grid grid-cols-2 sm:grid-cols-3">
+      <span class="font-bold">Course Selection</span>
+      <div class="mt-2">
         <Select
-          bind:field={fields.hackathon.shirtSize}
-          placeholder="Shirt size"
-          sourceJson={shirtSizeJson}
+          bind:field={fields.program.csCourse}
+          placeholder="CS course"
+          sourceJson={csCoursesJson}
           floating
           required
-        />
-      </div>
-      <div class="grid grid-cols-1">
-        <Input
-          type="checkbox"
-          bind:field={fields.hackathon.firstHackathon}
-          placeholder="Will HackHarvard be your first hackathon?"
-        />
-        <Input
-          type="checkbox"
-          bind:field={fields.hackathon.previouslyParticipated}
-          placeholder="Have you previously participated at a HackHarvard hackathon?"
         />
       </div>
       <div class="mt-2">
         <Select
-          bind:field={fields.hackathon.reason}
-          placeholder="How did you learn about HackHarvard?"
+          bind:field={fields.program.mathCourse}
+          placeholder="Math course"
+          sourceJson={mathCoursesJson}
+          floating
+          required
+        />
+      </div>
+      <div class="mt-2">
+        <Select
+          bind:field={fields.program.engineeringCourse}
+          placeholder="Engineering course"
+          sourceJson={engineeringCoursesJson}
+          floating
+          required
+        />
+      </div>
+      <div class="mt-2">
+        <Select
+          bind:field={fields.program.scienceCourse}
+          placeholder="Science course"
+          sourceJson={scienceCoursesJson}
+          floating
+          required
+        />
+      </div>
+      <div class="mt-3 grid gap-1">
+        <span class="font-bold">Timeslots</span>
+        <div class="grid grid-cols-2 gap-2">
+          {#each timeSlotsJson as timeSlot}
+            <Input
+              type="checkbox"
+              bind:group={fields.program.timeSlots}
+              placeholder={timeSlot.name}
+            />
+          {/each}
+        </div>
+      </div>
+
+      <div class="mt-2">
+        <Select
+          bind:field={fields.program.reason}
+          placeholder="How did you learn about gbSTEM?"
           sourceJson={reasonsJson}
           floating
           required
         />
       </div>
-      <div class="mt-2">
-        <Textarea
-          bind:field={fields.hackathon.why}
-          placeholder="Why do you want to attend HackHarvard?"
-          required
-        />
-      </div>
-      <div class="mt-2">
-        <Textarea
-          bind:field={fields.hackathon.role}
-          placeholder="What do you see as your role on a hackathon team?"
-          required
-        />
-      </div>
-      <div class="mt-2">
-        <Textarea
-          bind:field={fields.hackathon.proud}
-          placeholder="What's something you've made that you're proud of?"
-          required
-        />
-      </div>
-      {#if fields.hackathon.resume.upload.url === ''}
-        <div class="mt-2">
-          <Input
-            bind:field={fields.hackathon.resume}
-            type="file"
-            placeholder="Upload your resume (max 1 MB; 1 page PDF)"
-            maxSize={1 * 1024 * 1024}
-            accept={['application/pdf']}
-            required
-          />
-        </div>
-      {/if}
-    </div>
-    <div class="grid gap-1">
-      <span class="font-bold">Dietary restrictions</span>
-      <div class="grid grid-cols-2">
-        {#each dietaryRestrictionsJson as dietaryRestriction}
-          <Input
-            type="checkbox"
-            bind:group={fields.hackathon.dietaryRestrictions}
-            placeholder={dietaryRestriction.name}
-          />
-        {/each}
-      </div>
+
+      <Input
+        type="checkbox"
+        bind:field={fields.program.inPerson}
+        placeholder="gbSTEM will offer in-person classes at the Cambridge Public Library. Would you like to opt for the in-person option if available for your student? Note that we cannot guarantee that in-person classes will be available for all students."
+      />
     </div>
     <div class="grid gap-1">
       <span class="font-bold">Agreements</span>
       <div class="grid">
         <Input
           type="checkbox"
-          bind:field={fields.agreements.codeOfConduct}
-          placeholder="I have read and agree to the MLH Code of Conduct (https://static.mlh.io/docs/mlh-code-of-conduct.pdf)."
+          bind:field={fields.agreements.entireProgram}
+          placeholder="gbSTEM will run from September 17th to December 17th. Will the student be able to participate throughout the entirety of the program?"
           required
         />
 
         <Input
           type="checkbox"
-          bind:field={fields.agreements.sharing}
-          placeholder="I authorize you to share my application/registration information with Major League Hacking for event administration, ranking, and MLH administration in-line with the MLH Privacy Policy (https://mlh.io/privacy). I further agree to the terms of both the MLH Contest Terms and Conditions (https://github.com/MLH/mlh-policies/blob/main/contest-terms.md)and the MLH Privacy Policy (https://mlh.io/privacy)"
+          bind:field={fields.agreements.timeCommitment}
+          placeholder="Do you hereby confirm that the student can meet the gbSTEM weekly time commitment? Once you have registered for your courses, you will not be able to unenroll. Please understand that an unused spot for your child prevents others from joining or getting their preferred time slots. The time commitment for EACH course selected is at minimum 2 hours per week.  This means that if your student takes a computer science, math, and engineering course, the time commitment will be 6 hours a week. Students are not allowed to miss classes unless for medical reasons or family emergencies."
           required
-        />
-        <Input
-          type="checkbox"
-          bind:field={fields.agreements.mlhEmails}
-          placeholder="I authorize MLH to send me an email where I can further opt into the MLH Hacker, Events, or
-        Organizer Newsletters and other communications from MLH."
         />
         <Input
           type="checkbox"

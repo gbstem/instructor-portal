@@ -10,12 +10,12 @@
   import { getDoc, doc } from 'firebase/firestore'
   import Card from '$lib/components/Card.svelte'
 
-  let hhid = ''
+  let id = ''
   $: emailVerified = $user?.emailVerified ?? true
   onMount(async () => {
     getDoc(doc($db, 'users', $user.uid)).then(res => {
       const profile = res.data()
-      hhid = profile.hhid
+      id = profile.id
     })
   })
   function handleVerificationEmail() {
@@ -57,7 +57,7 @@
     {/if}
     <Card class="max-w-lg grid gap-3">
       <div class="bg-gray-100 shadow-sm rounded-md px-3 py-2">
-        {`HHID: ${hhid}`}
+        {`ID: ${id}`}
       </div>
       <div class="text-sm">Any problems with changing your profile? Contact us.</div>
     </Card>

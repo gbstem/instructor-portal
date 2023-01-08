@@ -16,25 +16,6 @@
     default: createFields.text('firstName', 'lastName', 'email', 'password', 'confirmPassword')
   }
   function handleSubmit() {
-    const validEmails = [
-      'yuenlerchow@college.harvard.edu',
-      'lerchow@gmail.com',
-      'dseum@college.harvard.edu',
-      'dseum@gmail.com',
-      'jooeunjunelee@college.harvard.edu',
-      'nathanli@college.harvard.edu',
-      'edwardkang@college.harvard.edu',
-      'testing@hackharvard.io'
-    ]
-    if (!validEmails.includes(fields.default.email.value)) {
-      alert.trigger(
-        'error',
-        'Only HackHarvard board members can create accounts at the moment',
-        false
-      )
-      return
-    }
-
     showValidation = true
     if (isValid(formEl)) {
       if (fields.default.password.value === fields.default.confirmPassword.value) {
@@ -47,29 +28,29 @@
           })
           .then(async () => {
             await user.loaded()
-            getDoc(doc($db, 'meta', 'hhids')).then(res => {
-              const hhids = res.exists() ? res.data() : {}
+            getDoc(doc($db, 'meta', 'ids')).then(res => {
+              const ids = res.exists() ? res.data() : {}
               const alphabet = '0123456789'
               const nanoid = customAlphabet(alphabet, 7)
-              let hhid = ''
+              let id = ''
               for (let i = 0; i < 100; ++i) {
-                if (hhids['HH-' + nanoid()] === undefined) {
-                  hhid = 'HH-' + nanoid()
+                if (ids[nanoid()] === undefined) {
+                  id = nanoid()
                   break
                 }
               }
-              if (hhid === '') {
+              if (id === '') {
                 return alert.trigger('error', 'Too many collisions. Please try again.', false)
               } else {
                 setDoc(
-                  doc($db, 'meta', 'hhids'),
+                  doc($db, 'meta', 'ids'),
                   {
-                    [hhid]: hhid
+                    [id]: id
                   },
                   { merge: true }
                 ).then(() => {
                   setDoc(doc($db, 'users', $user.uid), {
-                    hhid,
+                    id,
                     role: 'applicant',
                     firstName,
                     lastName

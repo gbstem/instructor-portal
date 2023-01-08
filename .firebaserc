@@ -1,12 +1,12 @@
 {
   "projects": {
-    "default": "hackharvard-core"
+    "default": "gbstem-core"
   },
   "targets": {
-    "hackharvard-core": {
+    "gbstem-core": {
       "hosting": {
         "portal": [
-          "hackharvard-portal-2fed8"
+          "gbstem-portal"
         ]
       }
     }

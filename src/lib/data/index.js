@@ -13,6 +13,8 @@ import engineeringCoursesJson from './engineeringCourses.json'
 import gradesJson from './grades.json'
 import parentEducationJson from './parentEducation.json'
 import timeSlotsJson from './timeSlots.json'
+import coursesJson from './courses.json'
+import classesPerWeekJson from './classesPerWeek.json'
 
 export {
   racesEthnicitiesJson,
@@ -29,6 +31,7 @@ export {
   engineeringCoursesJson,
   gradesJson,
   parentEducationJson,
-  timeSlotsJson
-
+  timeSlotsJson,
+  coursesJson,
+  classesPerWeekJson
 }

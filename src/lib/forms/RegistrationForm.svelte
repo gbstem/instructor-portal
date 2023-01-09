@@ -1,18 +1,21 @@
 <script>
   import { classNames } from '$lib/utils'
   import { doc, getDoc, setDoc, addDoc, collection } from 'firebase/firestore'
-  import { db, user } from '$lib/firebase'
+  import { db, user, storage } from '$lib/firebase'
   import Input from '$lib/components/Input.svelte'
   import Select from '$lib/components/Select.svelte'
-  import Textarea from '$lib/components/Textarea.svelte'
   import {
     racesEthnicitiesJson,
     gendersJson,
     reasonsJson,
+    frlpJson,
+    parentEducationJson,
     timeSlotsJson,
-    coursesJson,
-    gradesJson,
-    classesPerWeekJson
+    csCoursesJson,
+    mathCoursesJson,
+    engineeringCoursesJson,
+    scienceCoursesJson,
+    gradesJson
   } from '$lib/data'
   import { createFields, serialize, isValid } from '$lib/forms'
   import { alert } from '$lib/stores'
@@ -26,22 +29,30 @@
   let fields = {
     personal: createFields.text(
       'email',
-      'firstName',
-      'lastName',
+      'secondaryEmail',
+      'studentFirstName',
+      'studentLastName',
+      'parentFirstName',
+      'parentLastName',
       'phoneNumber',
       'dateOfBirth',
       'gender',
       'raceEthnicity',
+      'frlp',
+      'parentEducation',
       'address'
     ),
-    academic: createFields.text('school', 'graduationYear'),
+    academic: createFields.text('school', 'grade'),
     program: {
-      ...createFields.text('reason', 'preferences', 'numClasses'),
-      ...createFields.group('courses', 'timeSlots'),
+      ...createFields.text(
+        'reason',
+        'csCourse',
+        'mathCourse',
+        'engineeringCourse',
+        'scienceCourse'
+      ),
+      ...createFields.group('timeSlots'),
       ...createFields.checkbox('inPerson')
-    },
-    essay: {
-      ...createFields.text('academicBackground', 'teachingScenario', 'why')
     },
     agreements: createFields.checkbox('entireProgram', 'timeCommitment', 'submitting'),
     meta: {
@@ -52,7 +63,7 @@
   }
 
   onMount(async () => {
-    const applicationDoc = await getDoc(doc($db, 'applications', $user.uid))
+    const applicationDoc = await getDoc(doc($db, 'registrations', $user.uid))
     if (applicationDoc.exists()) {
       // comment this out when changing what data the application uses
       // i.e., structure of fields
@@ -62,18 +73,18 @@
     const profileDocData = profileDoc.data()
     const temp = {
       email: fields.personal.email.value,
-      firstName: fields.personal.firstName.value,
-      lastName: fields.personal.lastName.value
+      firstName: fields.personal.parentFirstName.value,
+      lastName: fields.personal.parentLastName.value
     }
     fields.personal.email.value = $user.email
-    fields.personal.firstName.value = profileDocData.firstName
-    fields.personal.lastName.value = profileDocData.lastName
+    fields.personal.parentFirstName.value = profileDocData.firstName
+    fields.personal.parentLastName.value = profileDocData.lastName
     fields.meta.id.value = profileDocData.id
     fields.meta.uid.value = $user.uid
     if (
       temp.email !== fields.personal.email.value ||
-      temp.firstName !== fields.personal.firstName.value ||
-      temp.lastName !== fields.personal.lastName.value
+      temp.firstName !== fields.personal.parentFirstName.value ||
+      temp.lastName !== fields.personal.parentLastName.value
     ) {
       handleSave(false)
     }
@@ -92,7 +103,7 @@
     if (withDisabling) {
       disabled = true
     }
-    setDoc(doc($db, 'applications', $user.uid), serialize.toServer(fields))
+    setDoc(doc($db, 'registrations', $user.uid), serialize.toServer(fields))
       .then(() => {
         disabled = false
         alert.trigger('success', 'Your application was saved.')
@@ -108,11 +119,11 @@
       disabled = true
       let serializedFields = serialize.toServer(fields)
       serializedFields.meta.submitted.checked = true
-      setDoc(doc($db, 'applications', $user.uid), serializedFields)
+      setDoc(doc($db, 'registrations', $user.uid), serializedFields)
         .then(async () => {
           showValidation = false
           alert.trigger('success', 'Your application has been submitted!')
-          const applicationDoc = await getDoc(doc($db, 'applications', $user.uid))
+          const applicationDoc = await getDoc(doc($db, 'registrations', $user.uid))
           fields = serialize.fromServer(applicationDoc.data())
           window.scrollTo({
             top: 0,
@@ -150,7 +161,7 @@
       <span class="font-bold">Personal</span>
       <Card class="grid gap-3 my-2">
         <div class="bg-gray-100 shadow-sm rounded-md px-3 py-2">
-          {`Name: ${fields.personal.firstName.value} ${fields.personal.lastName.value}`}
+          {`Parent Name: ${fields.personal.parentFirstName.value} ${fields.personal.parentLastName.value}`}
         </div>
         <div class="bg-gray-100 shadow-sm rounded-md px-3 py-2">
           {`Email: ${fields.personal.email.value}`}
@@ -161,6 +172,13 @@
         </div>
       </Card>
 
+      <!-- secondary email -->
+      <Input
+        type="email"
+        bind:field={fields.personal.secondaryEmail}
+        placeholder="Secondary email"
+        floating
+      />
       <Input
         type="tel"
         bind:field={fields.personal.phoneNumber}
@@ -169,10 +187,28 @@
         required
       />
 
+      <!-- student first name -->
+      <Input
+        type="text"
+        bind:field={fields.personal.studentFirstName}
+        placeholder="Student first name"
+        floating
+        required
+      />
+
+      <!-- student last name -->
+      <Input
+        type="text"
+        bind:field={fields.personal.studentLastName}
+        placeholder="Student last name"
+        floating
+        required
+      />
+
       <Input
         type="date"
         bind:field={fields.personal.dateOfBirth}
-        placeholder="Date of birth"
+        placeholder="Student Date of birth"
         floating
         required
       />
@@ -180,7 +216,7 @@
       <div class="grid sm:grid-cols-2 gap-1 sm:gap-3">
         <Select
           bind:field={fields.personal.gender}
-          placeholder="Gender"
+          placeholder="Student gender"
           sourceJson={gendersJson}
           floating
           required
@@ -189,12 +225,27 @@
           bind:field={fields.personal.raceEthnicity}
           name="race"
           autocomplete="race"
-          placeholder="Race or ethnicity"
+          placeholder="Student race or ethnicity"
           sourceJson={racesEthnicitiesJson}
           floating
           required
         />
       </div>
+
+      <Select
+        bind:field={fields.personal.frlp}
+        placeholder="Eligible for federal free or reduced lunch program?"
+        sourceJson={frlpJson}
+        floating
+        required
+      />
+      <Select
+        bind:field={fields.personal.parentEducation}
+        placeholder="Parent's highest level of education"
+        sourceJson={parentEducationJson}
+        floating
+        required
+      />
 
       <Input
         type="text"
@@ -211,14 +262,14 @@
           <Input
             type="text"
             bind:field={fields.academic.school}
-            placeholder="Current school"
+            placeholder="Student's current school"
             floating
             required
           />
         </div>
         <Select
           bind:field={fields.academic.grade}
-          placeholder="Grade"
+          placeholder="Student Grade"
           sourceJson={gradesJson}
           floating
           required
@@ -226,43 +277,43 @@
       </div>
     </div>
     <div class="grid gap-1">
-      <div class="mt-3 grid gap-1">
-        <span class="font-bold"
-          >Which of the following courses are you comfortable teaching? Check all that apply.</span
-        >
-        <div class="grid grid-cols-2 gap-2">
-          {#each coursesJson as course}
-            <Input type="checkbox" bind:group={fields.program.courses} placeholder={course.name} />
-          {/each}
-        </div>
-      </div>
-
-      <div class="mt-4">
-        <span class="font-bold"
-          >If you have any preferences for the courses you teach, please list them here.</span
-        >
-        <Input
-          type="text"
-          bind:field={fields.program.preferences}
-          placeholder="Preferences"
-          floating
-        />
-      </div>
-
-      <div class="mt-4">
-        <span class="font-bold"
-          >How many classes would you be able to teach a week? Each class will meet for 2 hours a
-          week.</span
-        >
+      <span class="font-bold">Course Selection</span>
+      <div class="mt-2">
         <Select
-          bind:field={fields.program.classesPerWeek}
-          placeholder="Num classes per week"
-          sourceJson={classesPerWeekJson}
+          bind:field={fields.program.csCourse}
+          placeholder="CS course"
+          sourceJson={csCoursesJson}
           floating
           required
         />
       </div>
-
+      <div class="mt-2">
+        <Select
+          bind:field={fields.program.mathCourse}
+          placeholder="Math course"
+          sourceJson={mathCoursesJson}
+          floating
+          required
+        />
+      </div>
+      <div class="mt-2">
+        <Select
+          bind:field={fields.program.engineeringCourse}
+          placeholder="Engineering course"
+          sourceJson={engineeringCoursesJson}
+          floating
+          required
+        />
+      </div>
+      <div class="mt-2">
+        <Select
+          bind:field={fields.program.scienceCourse}
+          placeholder="Science course"
+          sourceJson={scienceCoursesJson}
+          floating
+          required
+        />
+      </div>
       <div class="mt-3 grid gap-1">
         <span class="font-bold">Timeslots</span>
         <div class="grid grid-cols-2 gap-2">
@@ -276,12 +327,6 @@
         </div>
       </div>
 
-      <Input
-        type="checkbox"
-        bind:field={fields.program.inPerson}
-        placeholder="gbSTEM will offer in-person classes at the Cambridge Public Library. Would you like to opt for the in-person option if available for your student? Note that we cannot guarantee that in-person classes will be available for all students."
-      />
-
       <div class="mt-2">
         <Select
           bind:field={fields.program.reason}
@@ -292,30 +337,11 @@
         />
       </div>
 
-      <div class="mt-5">
-        <span class="font-bold">Essays</span>
-        <div class="mt-2">
-          <Textarea
-            bind:field={fields.essay.academicBackground}
-            placeholder="Describe your academic background in any of the classes you said you were comfortable teaching. List any relevant coursework, projects, or extracurriculars. (max 150 words)"
-            required
-          />
-        </div>
-        <div class="mt-2">
-          <Textarea
-            bind:field={fields.essay.teachingScenario}
-            placeholder="Suppose your students are not engaging in the class. What would you do? (max 150 words)"
-            required
-          />
-        </div>
-        <div class="mt-2">
-          <Textarea
-            bind:field={fields.essay.why}
-            placeholder="Why do you want to teach for gbTEM (max 150 words)?"
-            required
-          />
-        </div>
-      </div>
+      <Input
+        type="checkbox"
+        bind:field={fields.program.inPerson}
+        placeholder="gbSTEM will offer in-person classes at the Cambridge Public Library. Would you like to opt for the in-person option if available for your student? Note that we cannot guarantee that in-person classes will be available for all students."
+      />
     </div>
     <div class="grid gap-1">
       <span class="font-bold">Agreements</span>

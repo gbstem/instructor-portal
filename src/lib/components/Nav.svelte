@@ -6,8 +6,10 @@
   import Brand from './Brand.svelte'
   import { navigating } from '$app/stores'
   import { fade } from 'svelte/transition'
-  import { user } from '$lib/firebase'
+  import { user, db } from '$lib/firebase'
   import AnnouncementsBell from './AnnouncementsBell.svelte'
+
+  export let applicationType
 
   onMount(() => {
     updateShadow()
@@ -20,20 +22,39 @@
     open = false
   }
   $: emailVerified = $user?.emailVerified
-  const pages = [
-    {
-      name: 'Dashboard',
-      href: '/dashboard'
-    },
-    {
-      name: 'Apply',
-      href: '/apply'
-    },
-    {
-      name: 'Group',
-      href: '/group'
-    }
-  ]
+
+  let pages
+  $: if (applicationType === 'apply') {
+    pages = [
+      {
+        name: 'Dashboard',
+        href: '/dashboard'
+      },
+      {
+        name: 'Apply',
+        href: '/apply'
+      }
+    ]
+  } else if (applicationType === 'register') {
+    pages = [
+      {
+        name: 'Dashboard',
+        href: '/dashboard'
+      },
+      {
+        name: 'Register',
+        href: '/register'
+      }
+    ]
+  } else {
+    pages = [
+      {
+        name: 'Dashboard',
+        href: '/dashboard'
+      }
+    ]
+  }
+
   function updateShadow() {
     shadow = window.pageYOffset !== 0
   }

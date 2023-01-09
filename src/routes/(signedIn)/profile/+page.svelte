@@ -1,6 +1,7 @@
 <script>
   import ChangeEmailForm from '$lib/forms/ChangeEmailForm.svelte'
   import ChangePasswordForm from '$lib/forms/ChangePasswordForm.svelte'
+  import ChangeRoleForm from '$lib/forms/ChangeRoleForm.svelte'
   import { fade } from 'svelte/transition'
   import { user, db } from '$lib/firebase'
   import { sendEmailVerification } from 'firebase/auth'
@@ -62,6 +63,7 @@
       <div class="text-sm">Any problems with changing your profile? Contact us.</div>
     </Card>
     <ChangeNameForm />
+    <ChangeRoleForm />
     <ChangeEmailForm />
     <ChangePasswordForm />
   </div>

@@ -8,12 +8,20 @@
   import { alert } from '$lib/stores'
   import { doc, getDoc, setDoc } from 'firebase/firestore'
   import { customAlphabet } from 'nanoid'
+  import Select from '../components/Select.svelte'
 
   let formEl
   let disabled = false
   let showValidation = false
   let fields = {
-    default: createFields.text('firstName', 'lastName', 'email', 'password', 'confirmPassword')
+    default: createFields.text(
+      'firstName',
+      'lastName',
+      'applicantType',
+      'email',
+      'password',
+      'confirmPassword'
+    )
   }
   function handleSubmit() {
     showValidation = true
@@ -22,6 +30,20 @@
         disabled = true
         const firstName = fields.default.firstName.value.trim()
         const lastName = fields.default.lastName.value.trim()
+        let applicationType = 'register'
+        if (
+          fields.default.applicantType.value ===
+          'parent registering my child to take gbSTEM courses'
+        ) {
+          applicationType = 'register'
+        } else if (
+          fields.default.applicantType.value === 'high school student applying to be an instructor'
+        ) {
+          applicationType = 'apply'
+        } else {
+          alert.trigger('error', 'Invalid application type', false)
+        }
+
         auth
           .signUp(fields.default.email.value, fields.default.password.value, {
             displayName: `${firstName} ${lastName}`
@@ -53,7 +75,8 @@
                     id,
                     role: 'applicant',
                     firstName,
-                    lastName
+                    lastName,
+                    applicationType
                   }).then(() => {
                     fields = disableErrors.allSections(fields)
                     goto('/')
@@ -100,6 +123,17 @@
         required
       />
     </div>
+    <Select
+      bind:field={fields.default.applicantType}
+      placeholder="I am a ..."
+      floating
+      required
+      sourceJson={[
+        { name: 'parent registering my child to take gbSTEM courses' },
+        { name: 'high school student applying to be an instructor' }
+      ]}
+    />
+
     <Input type="email" bind:field={fields.default.email} placeholder="Email" floating required />
     <Input
       type="password"

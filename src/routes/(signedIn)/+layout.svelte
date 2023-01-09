@@ -1,11 +1,20 @@
 <script>
   import Nav from '$lib/components/Nav.svelte'
-  import { user } from '$lib/firebase'
+  import { user, db } from '$lib/firebase'
   import { onMount } from 'svelte'
+  import { getDoc, doc } from 'firebase/firestore'
 
   $: if (!($user?.emailVerified ?? true)) {
     sessionStorage.setItem('emailVerified', 'false')
   }
+
+  let applicationType
+  async function getApplicationType() {
+    const profileDoc = await getDoc(doc($db, 'users', $user.uid))
+    const profileDocData = profileDoc.data()
+    applicationType = profileDocData.applicationType
+  }
+
   onMount(async () => {
     if (sessionStorage.getItem('emailVerified') === 'false' && $user.emailVerified) {
       const { getIdToken } = await import('firebase/auth')
@@ -13,8 +22,9 @@
         sessionStorage.removeItem('emailVerified')
       })
     }
+    getApplicationType()
   })
 </script>
 
-<Nav />
+<Nav bind:applicationType />
 <slot />

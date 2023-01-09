@@ -216,10 +216,12 @@
             required
           />
         </div>
-        <Select
-          bind:field={fields.academic.grade}
-          placeholder="Grade"
-          sourceJson={gradesJson}
+        <Input
+          type="number"
+          bind:field={fields.academic.graduationYear}
+          placeholder="Graduation year"
+          min={new Date().getFullYear()}
+          max={new Date().getFullYear() + 20}
           floating
           required
         />
@@ -228,7 +230,8 @@
     <div class="grid gap-1">
       <div class="mt-3 grid gap-1">
         <span class="font-bold"
-          >Which of the following courses are you comfortable teaching? Check all that apply.</span
+          >Which of the following courses are you comfortable teaching? Check all that apply. Course
+          descriptions are on our website.</span
         >
         <div class="grid grid-cols-2 gap-2">
           {#each coursesJson as course}
@@ -255,7 +258,7 @@
           week.</span
         >
         <Select
-          bind:field={fields.program.classesPerWeek}
+          bind:field={fields.program.numClasses}
           placeholder="Num classes per week"
           sourceJson={classesPerWeekJson}
           floating
@@ -279,7 +282,7 @@
       <Input
         type="checkbox"
         bind:field={fields.program.inPerson}
-        placeholder="gbSTEM will offer in-person classes at the Cambridge Public Library. Would you like to opt for the in-person option if available for your student? Note that we cannot guarantee that in-person classes will be available for all students."
+        placeholder="gbSTEM will offer both virtual classes and in-person classes at the Cambridge Public Library. Check this box if you would be able to conduct in-person lessons."
       />
 
       <div class="mt-2">
@@ -311,7 +314,7 @@
         <div class="mt-2">
           <Textarea
             bind:field={fields.essay.why}
-            placeholder="Why do you want to teach for gbTEM (max 150 words)?"
+            placeholder="Why do you want to teach for gbTEM? (max 150 words)"
             required
           />
         </div>
@@ -323,14 +326,14 @@
         <Input
           type="checkbox"
           bind:field={fields.agreements.entireProgram}
-          placeholder="gbSTEM will run from September 17th to December 17th. Will the student be able to participate throughout the entirety of the program?"
+          placeholder="gbSTEM will run from September 17th to December 17th. Do you confirm that you will be able to teach for the entirety of the program?"
           required
         />
 
         <Input
           type="checkbox"
           bind:field={fields.agreements.timeCommitment}
-          placeholder="Do you hereby confirm that the student can meet the gbSTEM weekly time commitment? Once you have registered for your courses, you will not be able to unenroll. Please understand that an unused spot for your child prevents others from joining or getting their preferred time slots. The time commitment for EACH course selected is at minimum 2 hours per week.  This means that if your student takes a computer science, math, and engineering course, the time commitment will be 6 hours a week. Students are not allowed to miss classes unless for medical reasons or family emergencies."
+          placeholder="Do you hereby confirm that if you are selected as an instructor, that you will be able to make the weekly time commitment of 2 hours a week for each class you teach? "
           required
         />
         <Input

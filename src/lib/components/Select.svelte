@@ -30,21 +30,18 @@
       name => name.toLowerCase().indexOf(lowerCaseValue) !== -1
     )
   }, 150)
-  $: filterSourceNames(field.value)
-  $: catchCurrent(open)
-  $: if (sourceNames.includes(field.value)) {
-    if (self) self.setCustomValidity('')
-  } else {
-    if (self) self.setCustomValidity(' ')
-  }
+  $: onOpen(open)
+  $: onField(field)
 
   const id = uniqueId('select-')
+  filterSourceNames(field.value)
   function handleInput(e) {
     if (!open) {
       open = true
     }
     selectedIndex = 0
     field.value = e.target.value
+    filterSourceNames(field.value)
   }
   function handleKeyDown(e) {
     switch (e.code) {
@@ -86,6 +83,27 @@
       setOpen: value => {
         open = value
       }
+    }
+  }
+  function onOpen() {
+    if (open) {
+      catchCurrent()
+    } else {
+      const givenValue = field.value
+      if (sourceNames.includes(givenValue)) {
+        filteredSourceNames = [givenValue, ...sourceNames.filter(name => name !== givenValue)]
+        selectedIndex = 0
+      } else {
+        field.value = ''
+        filterSourceNames(field.value)
+      }
+    }
+  }
+  function onField() {
+    if (sourceNames.includes(field.value)) {
+      if (self) self.setCustomValidity('')
+    } else {
+      if (self) self.setCustomValidity(' ')
     }
   }
 </script>
@@ -214,7 +232,8 @@
             on:mouseenter={() => {
               selectedIndex = index
             }}
-            >{name}
+          >
+            {name}
           </button>
         {/each}
       {/if}

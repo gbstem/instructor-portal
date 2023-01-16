@@ -6,22 +6,27 @@
 
   const asyncData = new Promise((resolve, reject) => {
     let data = {
-      application: '',
-      group: {}
+      course: '',
+      instructors: [],
+      students: []
     }
     user.loaded().then(() => {
-      getDoc(doc($db, 'applications', $user.uid)).then(res => {
+      getDoc(doc($db, 'registrations', $user.uid)).then(res => {
         if (res.exists()) {
-          const application = res.data()
-          console.log(application)
-          if (application.accepted) {
-            data.application =
-              'You have been accepted to gbSTEM 2023! We look forward to seeing you.'
-          } else {
-            data.application = application.submitted ? 'Submitted and in review!' : 'In progress.'
-          }
-        } else {
-          data.application = 'Not started.'
+          const registration = res.data()
+          const { classId } = registration
+          getDoc(doc($db, 'classes', classId)).then(res => {
+            if (res.exists()) {
+              const classInfo = res.data()
+              data.course = classInfo.course
+              Object.keys(classInfo.instructors).forEach(instructorId => {
+                instructors.push(classInfo.instructors[instructorId])
+              })
+              Object.keys(classInfo.students).forEach(studentId => {
+                students.push(classInfo.students[studentId])
+              })
+            }
+          })
         }
         resolve(data)
       })
@@ -32,8 +37,24 @@
 {#await asyncData then data}
   <div class="grid grid-cols-2" transition:fade|local={{ duration: 150 }}>
     <Card>
-      <svelte:fragment slot="title">Application</svelte:fragment>
-      <div class="text-xl">{data.application}</div>
+      <svelte:fragment slot="title">Class</svelte:fragment>
+      {#if data.class}
+        <div class="text-lg font-bold">{data.course}</div>
+        <div class="text-sm text-gray-500">Instructors</div>
+        <ul class="list-disc list-inside">
+          {#each data.instructors as instructor}
+            <li>{instructor}</li>
+          {/each}
+        </ul>
+        <div class="text-sm text-gray-500">Students</div>
+        <ul class="list-disc list-inside">
+          {#each data.students as student}
+            <li>{student}</li>
+          {/each}
+        </ul>
+      {:else}
+        <div class="text-sm text-gray-500">No class found.</div>
+      {/if}
     </Card>
   </div>
 {:catch}

@@ -27,10 +27,6 @@
   $: if (applicationType === 'apply') {
     pages = [
       {
-        name: 'Dashboard',
-        href: '/dashboard'
-      },
-      {
         name: 'Apply',
         href: '/apply'
       }
@@ -38,21 +34,12 @@
   } else if (applicationType === 'register') {
     pages = [
       {
-        name: 'Dashboard',
-        href: '/dashboard'
-      },
-      {
         name: 'Register',
         href: '/register'
       }
     ]
   } else {
-    pages = [
-      {
-        name: 'Dashboard',
-        href: '/dashboard'
-      }
-    ]
+    pages = []
   }
 
   function updateShadow() {

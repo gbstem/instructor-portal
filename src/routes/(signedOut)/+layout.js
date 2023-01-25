@@ -6,7 +6,7 @@ export async function load() {
   if (browser) {
     const userData = await user.get()
     if (userData) {
-      goto('/dashboard')
+      goto('/apply')
     }
   }
 }

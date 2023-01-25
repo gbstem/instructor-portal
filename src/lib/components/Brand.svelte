@@ -3,6 +3,8 @@
     <a class="shrink-0" href="https://gbstem.org">
       <img class="w-8 h-8" src="/penguin.png" alt="" />
     </a>
-    <a class="text-lg uppercase rounded-md bg-blue-200 py-1 px-2 font-bold" href="/"> Portal </a>
+    <a class="text-lg uppercase rounded-md bg-blue-200 py-1 px-2 font-bold" href="/">
+      Instructor Portal
+    </a>
   </div>
 </div>

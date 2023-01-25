@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "target": "portal",
+    "target": "instructor",
     "public": "build",
     "ignore": [
       "firebase.json",

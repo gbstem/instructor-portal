@@ -5,8 +5,8 @@
   "targets": {
     "gbstem-core": {
       "hosting": {
-        "portal": [
-          "gbstem-portal"
+        "instructor": [
+          "gbstem-instructor"
         ]
       }
     }

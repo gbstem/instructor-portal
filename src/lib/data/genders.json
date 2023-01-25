@@ -1,7 +1,22 @@
 [
-  { "name": "Man", "code": 0 },
-  { "name": "Woman", "code": 1 },
-  { "name": "Non-binary", "code": 2 },
-  { "name": "Prefer to self-describe", "code": 3 },
-  { "name": "Prefer not to answer", "code": 4 }
+  {
+    "name": "Male",
+    "code": 0
+  },
+  {
+    "name": "Female",
+    "code": 1
+  },
+  {
+    "name": "Non-binary",
+    "code": 2
+  },
+  {
+    "name": "Prefer to self-describe",
+    "code": 3
+  },
+  {
+    "name": "Prefer not to answer",
+    "code": 4
+  }
 ]

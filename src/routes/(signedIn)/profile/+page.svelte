@@ -63,7 +63,6 @@
       <div class="text-sm">Any problems with changing your profile? Contact us.</div>
     </Card>
     <ChangeNameForm />
-    <ChangeRoleForm />
     <ChangeEmailForm />
     <ChangePasswordForm />
   </div>

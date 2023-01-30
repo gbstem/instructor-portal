@@ -11,7 +11,6 @@
     reasonsJson,
     timeSlotsJson,
     coursesJson,
-    gradesJson,
     classesPerWeekJson
   } from '$lib/data'
   import { createFields, serialize, isValid } from '$lib/forms'
@@ -36,7 +35,7 @@
     ),
     academic: createFields.text('school', 'graduationYear'),
     program: {
-      ...createFields.text('reason', 'preferences', 'numClasses'),
+      ...createFields.text('reason', 'preferences', 'numClasses', 'notAvailable'),
       ...createFields.group('courses', 'timeSlots'),
       ...createFields.checkbox('inPerson')
     },
@@ -279,6 +278,14 @@
         </div>
       </div>
 
+      <div class="mt-2">
+        <Textarea
+          bind:field={fields.program.notAvailable}
+          placeholder="When will you not be available to teach classes during the semester? Include potential conflicts such as medical absences, vacations, and athletic events."
+          required
+        />
+      </div>
+
       <Input
         type="checkbox"
         bind:field={fields.program.inPerson}
@@ -314,54 +321,54 @@
         <div class="mt-2">
           <Textarea
             bind:field={fields.essay.why}
-            placeholder="Why do you want to teach for gbTEM? (max 150 words)"
+            placeholder="Why do you want to teach for gbSTEM? (max 150 words)"
             required
           />
         </div>
       </div>
-    </div>
-    <div class="grid gap-1">
-      <span class="font-bold">Agreements</span>
-      <div class="grid">
-        <Input
-          type="checkbox"
-          bind:field={fields.agreements.entireProgram}
-          placeholder="gbSTEM will run from September 17th to December 17th. Do you confirm that you will be able to teach for the entirety of the program?"
-          required
-        />
+      <div class="grid gap-1">
+        <span class="font-bold">Agreements</span>
+        <div class="grid">
+          <Input
+            type="checkbox"
+            bind:field={fields.agreements.entireProgram}
+            placeholder="gbSTEM will run from March 5th to June 10th. Do you confirm that you will be able to teach for the entirety of the program?"
+            required
+          />
 
-        <Input
-          type="checkbox"
-          bind:field={fields.agreements.timeCommitment}
-          placeholder="Do you hereby confirm that if you are selected as an instructor, that you will be able to make the weekly time commitment of 2 hours a week for each class you teach? "
-          required
-        />
-        <Input
-          type="checkbox"
-          bind:field={fields.agreements.submitting}
-          placeholder="I understand submitting means I can no longer make changes to my application. Don't check this box until you are sure that you are ready to submit."
-          required
-        />
-      </div>
-    </div>
-    <div class={classNames('grid gap-3', !fields.meta.submitted.checked && 'grid-cols-2')}>
-      {#if fields.meta.submitted.checked}
-        <div class="shadow-sm rounded-md bg-green-100 px-4 py-2 text-green-900 text-center">
-          Application submitted and in review!
+          <Input
+            type="checkbox"
+            bind:field={fields.agreements.timeCommitment}
+            placeholder="Do you hereby confirm that if you are selected as an instructor, that you will be able to make the weekly time commitment of 2 hours a week for each class you teach? "
+            required
+          />
+          <Input
+            type="checkbox"
+            bind:field={fields.agreements.submitting}
+            placeholder="I understand submitting means I can no longer make changes to my application. Don't check this box until you are sure that you are ready to submit."
+            required
+          />
         </div>
-      {:else}
-        <button
-          type="button"
-          on:click={() => handleSave(true)}
-          class="shadow-sm rounded-md bg-gray-100 px-4 py-2 text-gray-900 hover:bg-gray-200 transition-colors duration-300 disabled:text-gray-500 disabled:bg-gray-200"
-          >Save draft</button
-        >
-        <button
-          type="submit"
-          class="shadow-sm rounded-md bg-blue-100 px-4 py-2 text-blue-900 hover:bg-blue-200 transition-colors duration-300 disabled:text-blue-500 disabled:bg-blue-200"
-          >Submit</button
-        >
-      {/if}
+      </div>
+      <div class={classNames('grid gap-3', !fields.meta.submitted.checked && 'grid-cols-2')}>
+        {#if fields.meta.submitted.checked}
+          <div class="shadow-sm rounded-md bg-green-100 px-4 py-2 text-green-900 text-center">
+            Application submitted and in review!
+          </div>
+        {:else}
+          <button
+            type="button"
+            on:click={() => handleSave(true)}
+            class="shadow-sm rounded-md bg-gray-100 px-4 py-2 text-gray-900 hover:bg-gray-200 transition-colors duration-300 disabled:text-gray-500 disabled:bg-gray-200"
+            >Save draft</button
+          >
+          <button
+            type="submit"
+            class="shadow-sm rounded-md bg-blue-100 px-4 py-2 text-blue-900 hover:bg-blue-200 transition-colors duration-300 disabled:text-blue-500 disabled:bg-blue-200"
+            >Submit</button
+          >
+        {/if}
+      </div>
     </div>
   </fieldset>
 </form>

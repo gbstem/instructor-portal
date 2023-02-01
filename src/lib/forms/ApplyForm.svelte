@@ -103,6 +103,20 @@
   }
   async function handleSubmit() {
     showValidation = true
+    // if the user opted for in-person classes, make sure they selected the Saturday 230pm option
+    if (
+      fields.program.inPerson.checked &&
+      !fields.program.timeSlots.value.includes(
+        'saturday-2-30-4-30-pm-you-need-to-select-this-option-if-you-want-the-in-person-class'
+      )
+    ) {
+      alert.trigger(
+        'error',
+        'To be available to teach in-person classes, you must select the Saturday 2:30-4:30pm timeslot option.',
+        false
+      )
+      return
+    }
     if (isValid(formEl)) {
       disabled = true
       let serializedFields = serialize.toServer(fields)

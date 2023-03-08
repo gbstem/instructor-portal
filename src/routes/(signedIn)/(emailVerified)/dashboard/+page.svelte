@@ -4,6 +4,45 @@
   import { fade } from 'svelte/transition'
   import { user, db } from '$lib/firebase'
 
+  const getClasses = classes => {
+    let data = {}
+    const classIds = []
+    for (const row of classes) {
+      if (
+        row.instructorUid === $user.uid ||
+        row.instructor2Uid === $user.uid ||
+        row.studentUId === $user.uid
+      ) {
+        classIds.push(row.classId)
+      }
+    }
+    for (const row of classes) {
+      if (classIds.includes(row.classId)) {
+        if (data[row.classId]) {
+          data[row.classId] = {
+            ...data[row.classId],
+            students: [
+              ...data[row.classId].students,
+              row.studentFirstName + ' ' + row.studentLastName
+            ]
+          }
+        } else {
+          data[row.classId] = {
+            course: row.Course,
+            instructorName: row.instructorName,
+            instructor2Name: row.instructor2Name,
+            location:
+              row.Loc === 'CPL Main Branch0' || row.Loc === 'CPL Main Branch'
+                ? 'CPL Main Branch'
+                : 'Virtual',
+            students: [row.studentFirstName + ' ' + row.studentLastName]
+          }
+        }
+      }
+    }
+    return data
+  }
+
   const asyncData = new Promise((resolve, reject) => {
     let data = {
       course: '',
@@ -11,24 +50,14 @@
       students: []
     }
     user.loaded().then(() => {
-      getDoc(doc($db, 'registrations', $user.uid)).then(res => {
-        if (res.exists()) {
-          const registration = res.data()
-          const { classId } = registration
-          getDoc(doc($db, 'classes', classId)).then(res => {
-            if (res.exists()) {
-              const classInfo = res.data()
-              data.course = classInfo.course
-              Object.keys(classInfo.instructors).forEach(instructorId => {
-                instructors.push(classInfo.instructors[instructorId])
-              })
-              Object.keys(classInfo.students).forEach(studentId => {
-                students.push(classInfo.students[studentId])
-              })
-            }
-          })
+      // get classes doc
+      getDoc(doc($db, 'classes', 'classes')).then(doc => {
+        if (doc.exists()) {
+          data = getClasses(doc.data().classes)
+          resolve(data)
+        } else {
+          resolve(data)
         }
-        resolve(data)
       })
     })
   })
@@ -36,26 +65,33 @@
 
 {#await asyncData then data}
   <div class="grid grid-cols-2" transition:fade|local={{ duration: 150 }}>
-    <Card>
-      <svelte:fragment slot="title">Class</svelte:fragment>
-      {#if data.class}
-        <div class="text-lg font-bold">{data.course}</div>
-        <div class="text-sm text-gray-500">Instructors</div>
-        <ul class="list-disc list-inside">
-          {#each data.instructors as instructor}
-            <li>{instructor}</li>
-          {/each}
-        </ul>
-        <div class="text-sm text-gray-500">Students</div>
-        <ul class="list-disc list-inside">
-          {#each data.students as student}
-            <li>{student}</li>
-          {/each}
-        </ul>
-      {:else}
-        <div class="text-sm text-gray-500">No class found.</div>
-      {/if}
-    </Card>
+    {#if data && Object.keys(data).length > 0}
+      {#each Object.entries(data) as [key, singleClass]}
+        <Card>
+          <div class="text-lg font-bold">{singleClass.course}</div>
+          <div class="text-sm text-gray-500">Location</div>
+          <div>{singleClass.location}</div>
+          <div class="text-sm text-gray-500">Instructor(s)</div>
+          <ul class="list-disc list-inside">
+            <li>{singleClass.instructorName}</li>
+            {#if singleClass.instructor2Name !== ''}
+              <li>{singleClass.instructor2Name}</li>
+            {/if}
+          </ul>
+          <div class="text-sm text-gray-500">Students</div>
+          <ul class="list-disc list-inside">
+            {#each singleClass.students as student}
+              <li>{student}</li>
+            {/each}
+          </ul>
+        </Card>
+      {/each}
+    {:else}
+      <Card>
+        <svelte:fragment slot="title">Class</svelte:fragment>
+        <div class="text-sm text-gray-500">It seems like you're not teaching any class.</div>
+      </Card>
+    {/if}
   </div>
 {:catch}
   <div>Error loading data. Please try again.</div>

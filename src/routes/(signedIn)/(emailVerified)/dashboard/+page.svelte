@@ -11,7 +11,7 @@
       if (
         row.instructorUid === $user.uid ||
         row.instructor2Uid === $user.uid ||
-        row.studentUId === $user.uid
+        row.studentUid === $user.uid
       ) {
         classIds.push(row.classId)
       }

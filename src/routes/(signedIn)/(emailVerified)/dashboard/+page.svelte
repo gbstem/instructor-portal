@@ -49,7 +49,7 @@
             instructorName: row.instructorName + ' (' + row.instructorEmail + ')',
             instructor2Name:
               row.instructor2Name !== ''
-                ? row.instructor2Name + '(' + row.instructor2Email + ')'
+                ? row.instructor2Name + ' (' + row.instructor2Email + ')'
                 : '',
             timeslot: row.Time,
             location:

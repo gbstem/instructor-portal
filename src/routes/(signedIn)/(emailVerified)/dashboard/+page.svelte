@@ -112,9 +112,7 @@
     {:else}
       <Card>
         <svelte:fragment slot="title">Class</svelte:fragment>
-        <div class="text-sm text-gray-500">
-          It seems like you're not teaching/enrolled in any class.
-        </div>
+        <div class="text-sm text-gray-500">It seems like you're not teaching in any class.</div>
       </Card>
     {/if}
   </div>

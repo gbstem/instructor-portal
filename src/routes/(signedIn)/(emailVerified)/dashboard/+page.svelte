@@ -91,7 +91,7 @@
         <Card>
           <div class="text-lg font-bold">{singleClass.course}</div>
           <div class="text-sm text-gray-500">Location</div>
-          <div>{singleClass.location}</div>
+          <div><a href={singleClass.location}>{singleClass.location}</a></div>
           <div class="text-sm text-gray-500">Time</div>
           <div>{formatTime(singleClass.timeslot)}</div>
           <div class="text-sm text-gray-500">Instructor(s)</div>
